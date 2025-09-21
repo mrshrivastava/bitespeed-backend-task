@@ -45,6 +45,7 @@ exports.identify = async (req, res) => {
       });
     } 
     else{
+
         let sameEmailContact = null;
         let samePhoneContact = null;
         for(let contact of existingContacts) {
@@ -54,7 +55,7 @@ exports.identify = async (req, res) => {
                 samePhoneContact = contact;
         }
         if(sameEmailContact && samePhoneContact) {
-            // both email and phone match different contacts
+            // case 3: both email and phone match different contacts
             let oldestContact = null;
             let newestContact = null;
 
@@ -73,19 +74,8 @@ exports.identify = async (req, res) => {
             if(oldestContact.id === newestContact.id) {
                 primaryContact = oldestContact;
             }
-            // else if(oldestContact.createdAt > newestContact.createdAt) {
-            //     let temp = oldestContact;
-            //     oldestContact = newestContact;
-            //     newestContact = temp;
-            //     primaryContact = oldestContact;
-            //     await newestContact.update({ linkPrecedence: "secondary", linkedId: oldestContact.id });
-            //     await Contact.update(
-            //         { linkedId: oldestContact.id },
-            //         { where: { linkedId: newestContact.id } } // re-point children
-            //     );
-            // }
             else {
-                
+
                 if(oldestContact.createdAt > newestContact.createdAt) {
                     let temp = oldestContact;
                     oldestContact = newestContact;
@@ -100,6 +90,8 @@ exports.identify = async (req, res) => {
             }
         }
         else if(sameEmailContact || samePhoneContact) {
+            // case 4: either email or phone matches
+            
             primaryContact = sameEmailContact ? sameEmailContact : samePhoneContact;
             if(primaryContact.linkPrecedence === "secondary") {
                 primaryContact = await Contact.findOne({ where: { id: primaryContact.linkedId } });
@@ -112,92 +104,6 @@ exports.identify = async (req, res) => {
             });
         }
     }
-    // else {
-    //   // Case 2: Contacts exist
-    //   // Find the oldest primary among them
-    //   primaryContact = existingContacts.find(c => c.linkPrecedence === "primary");
-
-    //   if (!primaryContact) {
-    //     primaryContact = existingContacts[0];
-    //     await primaryContact.update({ linkPrecedence: "primary" });
-    //   }
-
-    //   var sameEmailFound = false;
-    //   var samePhoneFound = false;
-    //   var sameEmailContact = null;
-    //   var samePhoneContact = null;
-    //   for(let contact of existingContacts) {
-    //     if(contact.email === email && contact.phoneNumber !== phoneNumber) {
-    //         sameEmailFound = true;
-    //         sameEmailContact = contact;
-    //     }
-    //     if(contact.phoneNumber === phoneNumber && contact.email !== email) {
-    //         samePhoneFound = true;
-    //         samePhoneContact = contact;
-    //     }
-    //     if(contact.email === email && contact.phoneNumber === phoneNumber) {
-    //         sameEmailFound = false;
-    //         samePhoneFound = false;
-    //         primaryContact = contact;
-    //         break;
-    //     }
-    //   }
-
-    //     if (sameEmailFound && samePhoneFound) {
-    //         // pick primary correctly
-    //         let oldestContact = sameEmailContact;
-    //         let newestContact = samePhoneContact;
-
-    //         if (samePhoneContact.createdAt < sameEmailContact.createdAt) {
-    //             oldestContact = samePhoneContact;
-    //             newestContact = sameEmailContact;
-    //         }
-
-    //         // ensure oldestContact is primary
-    //         if (oldestContact.linkPrecedence !== "primary") {
-    //             await oldestContact.update({ linkPrecedence: "primary", linkedId: null });
-    //         }
-
-    //         // update newest and ALL its children to point to oldest
-    //         await newestContact.update({
-    //             linkPrecedence: "secondary",
-    //             linkedId: oldestContact.id
-    //         });
-
-    //         await Contact.update(
-    //             { linkedId: oldestContact.id },
-    //             { where: { linkedId: newestContact.id } } // re-point children
-    //         );
-
-    //         primaryContact = oldestContact;
-    //     }
-    //     else if(sameEmailFound || samePhoneFound){
-    //         primaryContact = sameEmailFound ? sameEmailContact : samePhoneContact;
-
-    //     }
-
-    //   // If new info provided, create a secondary
-    //   else{
-    //         const isNewInfo = existingContacts.find(
-    //         c => c.email !== email || c.phoneNumber !== phoneNumber
-    //     );
-
-    //     if (isNewInfo && !sameEmailFound && !samePhoneFound) {
-    //         await Contact.create({
-    //         email,
-    //         phoneNumber,
-    //         linkedId: primaryContact.id,
-    //         linkPrecedence: "secondary"
-    //         });
-    //     }
-    // }
-      
-    //   // if email is same as one of the contacts and the phone number is same as one of the other contacts, link them
-      
-    // }
-
-    // Fetch all related contacts (primary + secondary)
-
 
     const allContacts = await Contact.findAll({
       where: {
